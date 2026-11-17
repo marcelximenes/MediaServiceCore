@@ -199,7 +199,21 @@ internal object FormatInfoWrapper {
     }
 
     private fun getClient(): Pair<AppClient, ProviderType> {
-        return mNextClient ?: CLIENT_LIST[0]
+        // OpenTube: começa pelo último cliente que tocou (também o salvo da sessão anterior).
+        // Antes, todo vídeo começava pelo TV, que hoje volta sem vídeo, e só no 3º cliente (WEB)
+        // conseguia: uns 6 s perdidos ao abrir o app e a cada vídeo.
+        return mNextClient ?: mActualClient ?: restoreClient() ?: CLIENT_LIST[0]
+    }
+
+    private fun restoreClient(): Pair<AppClient, ProviderType>? {
+        if (!GlobalPreferences.isInitialized()) {
+            return null
+        }
+
+        val ordinal = getData().clientType
+        val restored = CLIENT_LIST.firstOrNull { it.first.ordinal == ordinal } ?: return null
+        mActualClient = restored
+        return restored
     }
 
     @JvmStatic
